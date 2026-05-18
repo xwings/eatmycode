@@ -1,0 +1,156 @@
+# eatmycode
+
+A portable skill that teaches any coding agent — Claude Code, Codex
+CLI, OpenCode, or anything else that loads a `SKILL.md` — to build and
+maintain a durable architecture doc set for a project: an
+`ARCHITECTURE.md` control center at the root, plus one
+`ARCHITECTURE/<module>.md` per subsystem, every module file following a
+fixed seven-section template.
+
+The point is to give future sessions (yours or another agent's) a
+single place to check whether the work in progress is still aligned
+with what the project is supposed to be. No more re-deriving the
+architecture every conversation.
+
+## Why
+
+Two scenarios, one skill:
+
+1. **Brand-new project.** You hand the agent a description. It enters a
+   planning phase, asks about mission, target environment, layout, boot
+   flow, roadmap, address map. It re-confirms, goes deep, verifies, and
+   asks again until it fully understands. Only then does it write
+   `ARCHITECTURE.md` + `ARCHITECTURE/*.md`.
+2. **Existing project.** The agent reads the codebase, inventories the
+   subsystems, then enters the same planning phase. It asks about the
+   parts it can't infer (goals, milestones, how to prove things work),
+   reconfirms, and writes the doc set the same way.
+
+In both cases the agent does not write a single file until the user has
+explicitly approved the plan. That gate is the whole point — the doc
+structure is load-bearing.
+
+## How it works
+
+1. **Detect path** — bootstrap (no `ARCHITECTURE.md` yet) or add-module
+   (exists; user wants to add or audit one).
+2. **Plan** — enter the harness's planning mode if it has one; state
+   the planning phase explicitly otherwise.
+3. **Ask** — a fixed list of questions per path, captured verbatim.
+4. **Confirm** — present the plan, wait for an unambiguous *yes*.
+5. **Write + verify** — produce the files, then run a grep-based check
+   that every module file has all seven required sections.
+
+The full workflow lives in [`SKILL.md`](SKILL.md). Read it once.
+
+## Installation
+
+The skill is a single `SKILL.md` file. Drop it in the directory your
+harness scans for skills. The directory name must be `eatmycode`
+(matches the `name:` in the frontmatter).
+
+| Harness     | Project-level (committed to repo)       | User-level (machine-wide)                       |
+| ----------- | --------------------------------------- | ----------------------------------------------- |
+| Claude Code | `.claude/skills/eatmycode/SKILL.md`     | `~/.claude/skills/eatmycode/SKILL.md`           |
+| Codex CLI   | `.agents/skills/eatmycode/SKILL.md`     | walked from cwd up to repo root                 |
+| OpenCode    | `.opencode/skills/eatmycode/SKILL.md`   | `~/.config/opencode/skills/eatmycode/SKILL.md`  |
+| OpenClaw    | `.openclaw/skills/eatmycode/SKILL.md`   | `~/.openclaw/skills/eatmycode/SKILL.md`         |
+
+Pick the row that matches your harness and run the corresponding
+command from the directory containing `SKILL.md`:
+
+```sh
+# Claude Code (user-level)
+mkdir -p ~/.claude/skills/eatmycode && cp SKILL.md ~/.claude/skills/eatmycode/
+
+# Codex CLI (project-level)
+mkdir -p .agents/skills/eatmycode && cp SKILL.md .agents/skills/eatmycode/
+
+# OpenCode (user-level, native path)
+mkdir -p ~/.config/opencode/skills/eatmycode && cp SKILL.md ~/.config/opencode/skills/eatmycode/
+
+# OpenClaw (user-level, native path)
+mkdir -p ~/.openclaw/skills/eatmycode && cp SKILL.md ~/.openclaw/skills/eatmycode/
+```
+
+### Cross-harness shortcut
+
+OpenCode also discovers `.claude/skills/` and `.agents/skills/` (both
+project and home variants); OpenClaw also discovers `.agents/skills/`
+under the home directory. That gives you these multi-harness options:
+
+- Install at `~/.claude/skills/eatmycode/` → **Claude Code +
+  OpenCode** with one copy.
+- Install at `.agents/skills/eatmycode/` → **Codex CLI + OpenCode**
+  with one copy.
+- Install at `~/.agents/skills/eatmycode/` → **Codex CLI + OpenClaw**
+  (plus OpenCode if it's set to walk the home dir) with one copy.
+
+Two physical copies (or symlinks pointing to one) cover all four
+harnesses.
+
+## Invocation
+
+| Harness     | Explicit                | Implicit                                                     |
+| ----------- | ----------------------- | ------------------------------------------------------------ |
+| Claude Code | `/eatmycode`          | Triggered by frontmatter `description` when relevant         |
+| Codex CLI   | `$eatmycode` or `/skills` | Triggered if `allow_implicit_invocation` is true (default) |
+| OpenCode    | Reference by name       | Discovered via the native skill tool                         |
+| OpenClaw    | Reference by name       | Triggered by frontmatter `description` when relevant         |
+
+If implicit invocation is disabled or you want a guaranteed entry, just
+ask the agent: *"use the eatmycode skill to design the architecture
+for this project"*.
+
+## Harness mappings
+
+`SKILL.md` is written in generic verbs — *enter-plan-mode*, *ask-user*,
+*run-subagent*, *exit-plan-mode*. The concrete primitive each harness
+uses for each verb lives in [`mapping/`](mapping/):
+
+- [`mapping/claude-code.md`](mapping/claude-code.md)
+- [`mapping/codex.md`](mapping/codex.md)
+- [`mapping/opencode.md`](mapping/opencode.md)
+- [`mapping/openclaw.md`](mapping/openclaw.md)
+
+Every mapping file follows the same standard format: install paths,
+invocation syntax, and a `verb → primitive` table. To add support for a
+new harness, copy any existing file and fill in the same sections.
+
+## What it produces
+
+```
+your-project/
+├── ARCHITECTURE.md           # control center: mission, layout, roadmap, index
+├── ARCHITECTURE/
+│   ├── boot.md               # one file per subsystem,
+│   ├── memory.md             # each following the seven-section template
+│   └── transformer.md        # in SKILL.md
+├── AGENT.md   -> ARCHITECTURE.md   # optional symlinks, kept in sync
+└── CLAUDE.md  -> ARCHITECTURE.md
+```
+
+Each module file has exactly these sections, in order: **Goal**,
+**Status**, **Code Structure**, **Key Types and Entry Points**,
+**Interactions**, **How to Test**, **Open Gaps / Roadmap**. The
+verification block in `SKILL.md` greps for these headers.
+
+The generated `ARCHITECTURE.md` also carries a **Coding Discipline**
+section — eight cross-cutting principles (module depth, information
+hiding, abstraction layers, cohesion & separation, error handling,
+naming & obviousness, documentation, strategic design). Future
+agents read this block before writing or reviewing code, so the
+project's style stays consistent across sessions and harnesses.
+
+## Sources
+
+Harness docs used to verify the install paths and invocation
+conventions above:
+
+- [Claude Code — Skills](https://code.claude.com/docs/en/skills)
+- [Codex — Agent Skills](https://developers.openai.com/codex/skills)
+- [Codex — AGENTS.md](https://developers.openai.com/codex/guides/agents-md)
+- [OpenCode — Agent Skills](https://opencode.ai/docs/skills/)
+- [OpenCode — Rules / AGENTS.md](https://opencode.ai/docs/rules/)
+- [OpenClaw — Skills](https://docs.openclaw.ai/tools/skills)
+- [OpenClaw — Agent harness SDK](https://docs.openclaw.ai/plugins/sdk-agent-harness)
