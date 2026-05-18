@@ -55,6 +55,7 @@ harness scans for skills. The directory name must be `eatmycode`
 | Codex CLI   | `.agents/skills/eatmycode/SKILL.md`     | walked from cwd up to repo root                 |
 | OpenCode    | `.opencode/skills/eatmycode/SKILL.md`   | `~/.config/opencode/skills/eatmycode/SKILL.md`  |
 | OpenClaw    | `.openclaw/skills/eatmycode/SKILL.md`   | `~/.openclaw/skills/eatmycode/SKILL.md`         |
+| Grok Build  | `.grok/skills/eatmycode/SKILL.md`       | `~/.grok/skills/eatmycode/SKILL.md`             |
 
 Pick the row that matches your harness and run the corresponding
 command from the directory containing `SKILL.md`:
@@ -71,22 +72,27 @@ mkdir -p ~/.config/opencode/skills/eatmycode && cp SKILL.md ~/.config/opencode/s
 
 # OpenClaw (user-level, native path)
 mkdir -p ~/.openclaw/skills/eatmycode && cp SKILL.md ~/.openclaw/skills/eatmycode/
+
+# Grok Build (user-level, native path)
+mkdir -p ~/.grok/skills/eatmycode && cp SKILL.md ~/.grok/skills/eatmycode/
 ```
 
 ### Cross-harness shortcut
 
-OpenCode also discovers `.claude/skills/` and `.agents/skills/` (both
+OpenCode discovers `.claude/skills/` and `.agents/skills/` (both
 project and home variants); OpenClaw also discovers `.agents/skills/`
-under the home directory. That gives you these multi-harness options:
+under the home directory; Grok Build is Claude-Code-compatible and
+also reads `.claude/skills/` and `~/.claude/skills/`. That gives you
+these multi-harness options:
 
-- Install at `~/.claude/skills/eatmycode/` → **Claude Code +
-  OpenCode** with one copy.
+- Install at `~/.claude/skills/eatmycode/` → **Claude Code + OpenCode
+  + Grok Build** with one copy.
 - Install at `.agents/skills/eatmycode/` → **Codex CLI + OpenCode**
   with one copy.
 - Install at `~/.agents/skills/eatmycode/` → **Codex CLI + OpenClaw**
   (plus OpenCode if it's set to walk the home dir) with one copy.
 
-Two physical copies (or symlinks pointing to one) cover all four
+Two physical copies (or symlinks pointing to one) cover all five
 harnesses.
 
 ## Invocation
@@ -97,6 +103,7 @@ harnesses.
 | Codex CLI   | `$eatmycode` or `/skills` | Triggered if `allow_implicit_invocation` is true (default) |
 | OpenCode    | Reference by name       | Discovered via the native skill tool                         |
 | OpenClaw    | Reference by name       | Triggered by frontmatter `description` when relevant         |
+| Grok Build  | `/eatmycode` or `/skills` | Triggered by frontmatter `description` when relevant       |
 
 If implicit invocation is disabled or you want a guaranteed entry, just
 ask the agent: *"use the eatmycode skill to design the architecture
@@ -112,6 +119,7 @@ uses for each verb lives in [`mapping/`](mapping/):
 - [`mapping/codex.md`](mapping/codex.md)
 - [`mapping/opencode.md`](mapping/opencode.md)
 - [`mapping/openclaw.md`](mapping/openclaw.md)
+- [`mapping/grok.md`](mapping/grok.md)
 
 Every mapping file follows the same standard format: install paths,
 invocation syntax, and a `verb → primitive` table. To add support for a
@@ -154,3 +162,4 @@ conventions above:
 - [OpenCode — Rules / AGENTS.md](https://opencode.ai/docs/rules/)
 - [OpenClaw — Skills](https://docs.openclaw.ai/tools/skills)
 - [OpenClaw — Agent harness SDK](https://docs.openclaw.ai/plugins/sdk-agent-harness)
+- [Grok Build — Skills, Plugins & Marketplaces](https://docs.x.ai/build/features/skills-plugins-marketplaces)
