@@ -304,5 +304,9 @@ done
 - Existing `AGENT.md`, `AGENTS.md`, and `CLAUDE.md` content is source
   material for `ARCHITECTURE.md`; do not overwrite it before migration.
 - Module headers, Index entries, and `file:line` refs must stay current.
+- New modules and changed module/function contracts must update
+  `ARCHITECTURE.md` and the relevant `ARCHITECTURE/<module>.md` in the
+  same change when architecture, ownership, data flow, integration
+  points, or public behavior are affected.
 - **How to Test** must prove the module's Status milestone.
 - Unknown facts are questions, not placeholders.
