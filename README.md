@@ -1,11 +1,12 @@
 # eatmycode
 
 A portable skill that teaches any coding agent — Claude Code, Codex
-CLI, OpenCode, or anything else that loads a `SKILL.md` — to build and
-maintain a durable architecture doc set for a project: an
-`ARCHITECTURE.md` control center at the root, plus one
+CLI, OpenCode, OpenClaw, Grok Build, or anything else that loads a
+`SKILL.md` — to build and maintain a durable architecture doc set for a
+project: an `ARCHITECTURE.md` control center at the root, plus one
 `ARCHITECTURE/<module>.md` per subsystem, every module file following a
-fixed seven-section template.
+fixed seven-section template and one project-level Coding Discipline
+block.
 
 The point is to give future sessions (yours or another agent's) a
 single place to check whether the work in progress is still aligned
@@ -14,21 +15,12 @@ architecture every conversation.
 
 ## Why
 
-Two scenarios, one skill:
-
-1. **Brand-new project.** You hand the agent a description. It enters a
-   planning phase, asks about mission, target environment, layout, boot
-   flow, roadmap, address map. It re-confirms, goes deep, verifies, and
-   asks again until it fully understands. Only then does it write
-   `ARCHITECTURE.md` + `ARCHITECTURE/*.md`.
-2. **Existing project.** The agent reads the codebase, inventories the
-   subsystems, then enters the same planning phase. It asks about the
-   parts it can't infer (goals, milestones, how to prove things work),
-   reconfirms, and writes the doc set the same way.
-
-In both cases the agent does not write a single file until the user has
-explicitly approved the plan. That gate is the whole point — the doc
-structure is load-bearing.
+The skill covers bootstrap, add-module, and audit workflows. In each
+case the agent inspects existing code/docs first, including any
+`AGENT.md`, `AGENTS.md`, or `CLAUDE.md`, asks only for missing facts,
+gets explicit approval, writes the doc changes, then verifies the
+result. That approval gate matters because the doc structure becomes the
+project's agent-facing source of truth.
 
 ## How it works
 
@@ -36,7 +28,7 @@ structure is load-bearing.
    (exists; user wants to add or audit one).
 2. **Plan** — enter the harness's planning mode if it has one; state
    the planning phase explicitly otherwise.
-3. **Ask** — a fixed list of questions per path, captured verbatim.
+3. **Ask** — collect required facts that code/docs cannot answer.
 4. **Confirm** — present the plan, wait for an unambiguous *yes*.
 5. **Write + verify** — produce the files, then run a grep-based check
    that every module file has all seven required sections.
@@ -45,36 +37,36 @@ The full workflow lives in [`SKILL.md`](SKILL.md). Read it once.
 
 ## Installation
 
-The skill is a single `SKILL.md` file. Drop it in the directory your
-harness scans for skills. The directory name must be `eatmycode`
-(matches the `name:` in the frontmatter).
+Install `SKILL.md` plus the optional `mapping/` directory so the
+harness-specific verb table stays available. The directory name must be
+`eatmycode` (matches the `name:` in the frontmatter).
 
 | Harness     | Project-level (committed to repo)       | User-level (machine-wide)                       |
 | ----------- | --------------------------------------- | ----------------------------------------------- |
 | Claude Code | `.claude/skills/eatmycode/SKILL.md`     | `~/.claude/skills/eatmycode/SKILL.md`           |
-| Codex CLI   | `.agents/skills/eatmycode/SKILL.md`     | walked from cwd up to repo root                 |
+| Codex CLI   | `.agents/skills/eatmycode/SKILL.md`     | `~/.codex/skills/eatmycode/SKILL.md`           |
 | OpenCode    | `.opencode/skills/eatmycode/SKILL.md`   | `~/.config/opencode/skills/eatmycode/SKILL.md`  |
 | OpenClaw    | `.openclaw/skills/eatmycode/SKILL.md`   | `~/.openclaw/skills/eatmycode/SKILL.md`         |
 | Grok Build  | `.grok/skills/eatmycode/SKILL.md`       | `~/.grok/skills/eatmycode/SKILL.md`             |
 
 Pick the row that matches your harness and run the corresponding
-command from the directory containing `SKILL.md`:
+command from the directory containing `SKILL.md` and `mapping/`:
 
 ```sh
 # Claude Code (user-level)
-mkdir -p ~/.claude/skills/eatmycode && cp SKILL.md ~/.claude/skills/eatmycode/
+mkdir -p ~/.claude/skills/eatmycode && cp SKILL.md ~/.claude/skills/eatmycode/ && cp -R mapping ~/.claude/skills/eatmycode/
 
 # Codex CLI (project-level)
-mkdir -p .agents/skills/eatmycode && cp SKILL.md .agents/skills/eatmycode/
+mkdir -p .agents/skills/eatmycode && cp SKILL.md .agents/skills/eatmycode/ && cp -R mapping .agents/skills/eatmycode/
 
 # OpenCode (user-level, native path)
-mkdir -p ~/.config/opencode/skills/eatmycode && cp SKILL.md ~/.config/opencode/skills/eatmycode/
+mkdir -p ~/.config/opencode/skills/eatmycode && cp SKILL.md ~/.config/opencode/skills/eatmycode/ && cp -R mapping ~/.config/opencode/skills/eatmycode/
 
 # OpenClaw (user-level, native path)
-mkdir -p ~/.openclaw/skills/eatmycode && cp SKILL.md ~/.openclaw/skills/eatmycode/
+mkdir -p ~/.openclaw/skills/eatmycode && cp SKILL.md ~/.openclaw/skills/eatmycode/ && cp -R mapping ~/.openclaw/skills/eatmycode/
 
 # Grok Build (user-level, native path)
-mkdir -p ~/.grok/skills/eatmycode && cp SKILL.md ~/.grok/skills/eatmycode/
+mkdir -p ~/.grok/skills/eatmycode && cp SKILL.md ~/.grok/skills/eatmycode/ && cp -R mapping ~/.grok/skills/eatmycode/
 ```
 
 ### Cross-harness shortcut
@@ -131,10 +123,11 @@ new harness, copy any existing file and fill in the same sections.
 your-project/
 ├── ARCHITECTURE.md           # control center: mission, layout, roadmap, index
 ├── ARCHITECTURE/
-│   ├── boot.md               # one file per subsystem,
-│   ├── memory.md             # each following the seven-section template
-│   └── transformer.md        # in SKILL.md
+│   ├── module-a.md           # one file per subsystem,
+│   ├── module-b.md           # each following the seven-section template
+│   └── module-c.md           # defined in SKILL.md
 ├── AGENT.md   -> ARCHITECTURE.md   # optional symlinks, kept in sync
+├── AGENTS.md  -> ARCHITECTURE.md
 └── CLAUDE.md  -> ARCHITECTURE.md
 ```
 
@@ -143,12 +136,16 @@ Each module file has exactly these sections, in order: **Goal**,
 **Interactions**, **How to Test**, **Open Gaps / Roadmap**. The
 verification block in `SKILL.md` greps for these headers.
 
+If `AGENT.md`, `AGENTS.md`, or `CLAUDE.md` already exist, the skill
+uses their durable project guidance to seed `ARCHITECTURE.md` before
+replacing them with symlinks.
+
 The generated `ARCHITECTURE.md` also carries a **Coding Discipline**
-section — eight cross-cutting principles (module depth, information
-hiding, abstraction layers, cohesion & separation, error handling,
-naming & obviousness, documentation, strategic design). Future
-agents read this block before writing or reviewing code, so the
-project's style stays consistent across sessions and harnesses.
+section — five coding and architecture principles: clarify before
+coding, simple deep design, cohesive boundaries, surgical changes, and
+goal-based verification. Future agents read this block before writing
+or reviewing code, so work stays consistent across sessions and
+harnesses.
 
 ## Sources
 
