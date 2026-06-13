@@ -33,26 +33,36 @@ This skill is harness-agnostic. The workflow uses generic verbs:
 *write-file*, and *run-shell*. Read `mapping/<your-harness>.md` once at
 the start of a session to map those verbs to the local harness.
 
-## When to Invoke
-
-- A project needs its first architecture doc set.
-- A subsystem needs a new `ARCHITECTURE/<module>.md` entry.
-- An existing architecture doc or module file needs an audit.
-- The user wants the project-level Coding Discipline block added or
-  refreshed.
-- The user explicitly invokes the skill.
-
 ## Workflow
 
-### 1. Inspect before asking
+This skill runs as a small **team, never a solo runner**. Four roles —
+**Planner, Coder, Tester, Verifier** — each own a phase. When
+*run-subagent* is available, dispatch a separate agent per role; when it
+is not, one agent performs each role as a distinct, labeled pass. The
+roles never collapse into a single blended step.
 
-Check the project root:
+- **Planner** — inspect code and docs, then draft the plan: required
+  facts, file list, source paths, Index changes, migrated agent-file
+  content, and verification commands.
+- **Coder** — after approval, write or patch `ARCHITECTURE.md` and
+  `ARCHITECTURE/<module>.md` per the approved plan only. Stay surgical.
+- **Tester** — run every **How to Test** command and the Verification
+  block; report pass/fail with the actual output as evidence.
+- **Verifier** — independently re-check the output against the Template,
+  Index, `file:line` refs, and the Coding Discipline block, and confirm
+  the tests prove each module's Status milestone. Sign off only when the
+  result is clean; otherwise hand findings back to the Coder.
 
-- No `ARCHITECTURE.md` -> bootstrap path.
-- `ARCHITECTURE.md` exists -> add-module or audit path.
+### 1. Inspect before asking (Planner)
+
+Detect which path applies:
+
+- `ARCHITECTURE.md` **or** an `ARCHITECTURE/` directory exists -> **update
+  path**: read them and update in place per this skill.
+- Neither exists -> **create path**: bootstrap the doc set from scratch.
 - Any regular `AGENT.md`, `AGENTS.md`, or `CLAUDE.md` -> migrate its
   durable guidance into `ARCHITECTURE.md` before replacing it with a
-  symlink, regardless of path.
+  symlink, on either path.
 
 Read existing docs, list `ARCHITECTURE/`, inspect any `AGENT.md`,
 `AGENTS.md`, or `CLAUDE.md`, and inspect the relevant source before
@@ -60,7 +70,7 @@ asking questions. Use *run-subagent* for broad codebase inventory when
 available; otherwise inspect directly with shell search. Do not ask the
 user to restate facts already present in code or docs.
 
-### 2. Plan before writing
+### 2. Plan before writing (Planner)
 
 Invoke *enter-plan-mode*. If the harness has no plan-mode primitive,
 state that this is a planning phase and no files will be written until
@@ -71,7 +81,7 @@ Index changes, migrated agent-file content, symlink replacements, and
 verification commands. Invoke *exit-plan-mode* if available; otherwise
 ask for an explicit approval and wait for an unambiguous yes.
 
-### 3. Bootstrap path
+### 3. Create path — bootstrap (Coder)
 
 Ask or infer the minimum project facts needed for a useful control
 center:
@@ -102,15 +112,15 @@ Then inventory top-level subsystems. After approval, write:
 - `ARCHITECTURE.md` with `## Coding Discipline` before the Index.
 - One `ARCHITECTURE/<name>.md` per real or agreed subsystem, each using
   the Template.
-- `AGENT.md`, `AGENTS.md`, and/or `CLAUDE.md` symlinks. Replace
-  existing regular files only after their relevant content has been
-  migrated into `ARCHITECTURE.md`.
+- `AGENT.md`, `AGENTS.md`, and `CLAUDE.md` symlinks pointing to
+  `ARCHITECTURE.md`. Replace existing regular files only after their
+  relevant content has been migrated into `ARCHITECTURE.md`.
 
 If the user needs a project-specific exception to Coding Discipline,
 add `### Project-Specific Deviations` under that block; do not edit the
 principles themselves.
 
-### 4. Add-module or audit path
+### 4. Update path — add-module or audit (Coder)
 
 For each module, ask or infer:
 
@@ -135,6 +145,14 @@ source paths and line refs, Index entry, interactions, and test command.
 Patch only stale or missing material. If agent entry files still exist
 as regular files, reconcile their durable content into
 `ARCHITECTURE.md` and replace them with symlinks after approval.
+
+### 5. Test and verify (Tester then Verifier)
+
+The Coder hands the result to the Tester, who runs the affected module's
+**How to Test** commands and the [Verification](#verification) block and
+fixes every `[MISS]`. The Verifier then re-checks the output
+independently and signs off. Report the test results to the user with
+evidence; do not declare the task done on the Coder's word alone.
 
 ## Template
 
@@ -210,46 +228,84 @@ items with `Mx` when known.
 
 Every generated `ARCHITECTURE.md` must include this block verbatim as a
 top-level `## Coding Discipline` section before the Index. Module files
-do not repeat it.
+do not repeat it. Both code writing and code review must strictly follow
+it; it is reproduced from the Karpathy `CLAUDE.md` (heading levels
+demoted one step to nest under this section). Source:
+<https://raw.githubusercontent.com/multica-ai/andrej-karpathy-skills/refs/heads/main/CLAUDE.md>
 
 ````markdown
 ## Coding Discipline
 
-These standards guide both code writing and code review. They bias
-toward simple, explicit design that future agents can understand
-without rediscovering the project.
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with
+project-specific instructions as needed.
 
-### 1. Clarify Before Coding
+**Tradeoff:** These guidelines bias toward caution over speed. For
+trivial tasks, use judgment.
 
-No silent assumptions. State the intended behavior, constraints, and
-success criteria before implementing. If two interpretations are
-plausible, surface the tradeoff and ask when the choice affects design.
+### 1. Think Before Coding
 
-### 2. Simple, Deep Design
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-Build the minimum behavior that solves the stated problem, but hide
-real complexity behind narrow interfaces. Avoid speculative features,
-single-use abstractions, pass-through layers, and configurability that
-callers do not need.
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
 
-### 3. Cohesive Boundaries
+### 2. Simplicity First
 
-Keep knowledge in one place. Put code that changes together in the same
-module, separate general mechanisms from special-case policy, and
-document cross-module decisions in `ARCHITECTURE.md` or the owning
-module file instead of scattering them through comments.
+**Minimum code that solves the problem. Nothing speculative.**
 
-### 4. Surgical Changes
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
 
-Touch only the lines required for the task. Match the local style, do
-not refactor unrelated code, and clean up only unused imports,
-variables, functions, or files made obsolete by your own change.
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If
+yes, simplify.
 
-### 5. Verify Against the Goal
+### 3. Surgical Changes
 
-Tie each change to a concrete check: test command, expected output,
-exit code, or produced artifact. Tests should prove the milestone or
-bug fix, not merely that the code compiles.
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+### 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make
+it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs,
+fewer rewrites due to overcomplication, and clarifying questions come
+before implementation rather than after mistakes.
 ````
 
 ## Verification

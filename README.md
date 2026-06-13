@@ -24,14 +24,19 @@ project's agent-facing source of truth.
 
 ## How it works
 
-1. **Detect path** — bootstrap (no `ARCHITECTURE.md` yet) or add-module
-   (exists; user wants to add or audit one).
+1. **Detect path** — create (no `ARCHITECTURE.md` or `ARCHITECTURE/`
+   yet) or update (one exists; add a module or audit).
 2. **Plan** — enter the harness's planning mode if it has one; state
    the planning phase explicitly otherwise.
 3. **Ask** — collect required facts that code/docs cannot answer.
 4. **Confirm** — present the plan, wait for an unambiguous *yes*.
 5. **Write + verify** — produce the files, then run a grep-based check
    that every module file has all seven required sections.
+
+Throughout, the skill works as a **team, not a solo runner** — a Planner,
+Coder, Tester, and Verifier each own a phase (plan → code → test →
+verify), via subagents when the harness has them and otherwise as
+distinct labeled passes.
 
 The full workflow lives in [`SKILL.md`](SKILL.md). Read it once.
 
@@ -141,13 +146,16 @@ uses their durable project guidance to seed `ARCHITECTURE.md` before
 replacing them with symlinks.
 
 The generated `ARCHITECTURE.md` also carries a **Coding Discipline**
-section — five coding and architecture principles: clarify before
-coding, simple deep design, cohesive boundaries, surgical changes, and
-goal-based verification. Future agents read this block before writing
-or reviewing code, so work stays consistent across sessions and
-harnesses.
+section reproduced verbatim from the Karpathy `CLAUDE.md` — four
+principles: think before coding, simplicity first, surgical changes, and
+goal-driven execution. Future agents read this block before writing or
+reviewing code, so work stays consistent across sessions and harnesses.
 
 ## Sources
+
+The Coding Discipline block is reproduced verbatim from:
+
+- [Karpathy `CLAUDE.md`](https://raw.githubusercontent.com/multica-ai/andrej-karpathy-skills/refs/heads/main/CLAUDE.md)
 
 Harness docs used to verify the install paths and invocation
 conventions above:
