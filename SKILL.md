@@ -19,7 +19,7 @@ be, and where is each load-bearing decision documented?
   uses the exact Template section order: Goal, Status, Code Structure,
   Key Types and Entry Points, Interactions, How to Test, Open Gaps /
   Roadmap.
-- **`AGENT.md`, `AGENTS.md`, and `CLAUDE.md`** are agent entry files.
+- **`AGENT.md` and `CLAUDE.md`** are agent entry files.
   If any exist as regular files, read them as bootstrap source
   material, migrate relevant project guidance into `ARCHITECTURE.md`,
   then replace them with symlinks to `ARCHITECTURE.md` after approval.
@@ -60,12 +60,12 @@ Detect which path applies:
 - `ARCHITECTURE.md` **or** an `ARCHITECTURE/` directory exists -> **update
   path**: read them and update in place per this skill.
 - Neither exists -> **create path**: bootstrap the doc set from scratch.
-- Any regular `AGENT.md`, `AGENTS.md`, or `CLAUDE.md` -> migrate its
+- Any regular `AGENT.md` or `CLAUDE.md` -> migrate its
   durable guidance into `ARCHITECTURE.md` before replacing it with a
   symlink, on either path.
 
-Read existing docs, list `ARCHITECTURE/`, inspect any `AGENT.md`,
-`AGENTS.md`, or `CLAUDE.md`, and inspect the relevant source before
+Read existing docs, list `ARCHITECTURE/`, inspect any `AGENT.md` or 
+`CLAUDE.md`, and inspect the relevant source before
 asking questions. Use *run-subagent* for broad codebase inventory when
 available; otherwise inspect directly with shell search. Do not ask the
 user to restate facts already present in code or docs.
@@ -96,7 +96,7 @@ center:
 - **Maps / constants:** address map, port map, or well-known constants
   only when relevant.
 
-If `AGENT.md`, `AGENTS.md`, or `CLAUDE.md` already contain project
+If `AGENT.md` or `CLAUDE.md` already contain project
 instructions, use them to seed `ARCHITECTURE.md`:
 
 - Preserve durable facts: mission, workflow rules, coding standards,
@@ -112,7 +112,7 @@ Then inventory top-level subsystems. After approval, write:
 - `ARCHITECTURE.md` with `## Coding Discipline` before the Index.
 - One `ARCHITECTURE/<name>.md` per real or agreed subsystem, each using
   the Template.
-- `AGENT.md`, `AGENTS.md`, and `CLAUDE.md` symlinks pointing to
+- `AGENT.md` and `CLAUDE.md` symlinks pointing to
   `ARCHITECTURE.md`. Replace existing regular files only after their
   relevant content has been migrated into `ARCHITECTURE.md`.
 
@@ -338,7 +338,7 @@ grep -qF "## Coding Discipline" ARCHITECTURE.md \
   || echo "[MISS] ARCHITECTURE.md is missing Coding Discipline"
 
 # 4. Agent entry files, if present, point at ARCHITECTURE.md.
-for f in AGENT.md AGENTS.md CLAUDE.md; do
+for f in AGENT.md CLAUDE.md; do
   [ -e "$f" ] || continue
   if [ ! -L "$f" ]; then
     echo "[MISS] $f is not a symlink"
@@ -357,7 +357,7 @@ done
 
 - `ARCHITECTURE.md` is cross-cutting only; subsystem prose lives once in
   `ARCHITECTURE/<module>.md`.
-- Existing `AGENT.md`, `AGENTS.md`, and `CLAUDE.md` content is source
+- Existing `AGENT.md` and `CLAUDE.md` content is source
   material for `ARCHITECTURE.md`; do not overwrite it before migration.
 - Module headers, Index entries, and `file:line` refs must stay current.
 - New modules and changed module/function contracts must update
