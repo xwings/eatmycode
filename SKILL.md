@@ -162,17 +162,25 @@ as regular files, reconcile their durable content into
 
 The Coder hands the result to the Tester, who runs the affected module's
 **How to Test** commands and the [Verification](#verification) block and
-fixes every `[MISS]`. The Verifier then re-checks the output
-independently, walks the seven [Review Checks](#review-checks) over the
-diff, and applies the Definition of Done in the
+reports every `[MISS]` with its evidence. The Verifier then re-checks the
+output independently, walks the seven [Review Checks](#review-checks)
+over the diff, and applies the Definition of Done in the
 [Development Loop](#development-loop).
 
-This step is a gate, not a formality, and it loops. Unticked box or
-surviving `blocker`/`major`: hand the named findings back to the Coder
-and repeat from step 3 or 4. All boxes ticked: sign off. Honour the
-anti-thrash rules — every repeat closes a named finding, two consecutive
-no-change passes end the loop, and three passes on one finding send it
-back to the Planner.
+Neither the Tester nor the Verifier edits the tree: they produce
+findings, the Coder produces fixes. A reviewer who patches what they
+found has no independent pass left to confirm it.
+
+This step is a gate, not a formality, and it cycles — write, prove, seven
+checks, fix, re-prove, re-check. Unticked box or surviving
+`blocker`/`major`: hand the named findings back to the Coder, who repeats
+from step 3 or 4 against those findings and nothing else; the Tester and
+Verifier then run again over the new diff. Repeat until every Definition
+of Done box is ticked. The bar is open-source grade, and it is checked
+box by box rather than judged by how finished the work feels. All boxes
+ticked: sign off. Honour the anti-thrash rules — every repeat closes a
+named finding, two consecutive no-change passes end the loop, and three
+passes on one finding send it back to the Planner.
 
 Report to the user with evidence: the test output, the seven-check
 checklist, and the pass count if the loop ran more than once. Do not
@@ -759,8 +767,11 @@ done
 #    not a pass.
 
 # 7. Apply the Definition of Done. Any unticked box sends the named
-#    findings back to the Coder and repeats the loop from step 3 or 4.
-#    Report the pass count when the loop ran more than once.
+#    findings back to the Coder, who fixes those findings and nothing
+#    else; then re-run checks 1-6 over the new diff and apply Done
+#    again. Repeat until every box ticks — open-source grade is the bar,
+#    and it is checked box by box, not felt. Report the pass count when
+#    the loop ran more than once.
 ```
 
 ## Non-Negotiables
@@ -780,6 +791,8 @@ done
   `### Project-Specific Deviations`, never into the blocks themselves.
 - Writing code is not the end of the loop. Review and Gate run before
   anything is called done, and the loop repeats while findings remain.
+- The seven checks report; they do not repair. Findings go back to the
+  Coder, the fix is re-proved and re-checked, and the cycle runs again.
 - Done is the Definition of Done, checked box by box — never "it runs",
   never "it looks fine". An unticked box is named, with its reason.
 - No review finding without `file:line`, and no reported check that did
