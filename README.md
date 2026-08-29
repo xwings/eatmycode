@@ -5,8 +5,8 @@ CLI, OpenCode, OpenClaw, Grok Build, or anything else that loads a
 `SKILL.md` — to build and maintain a durable architecture doc set for a
 project: an `ARCHITECTURE.md` control center at the root, plus one
 `ARCHITECTURE/<module>.md` per subsystem, every module file following a
-fixed seven-section template and one project-level Coding Discipline
-block.
+fixed seven-section template, plus three project-level discipline blocks
+covering how to think, how to write, and how to verify.
 
 The point is to give future sessions (yours or another agent's) a
 single place to check whether the work in progress is still aligned
@@ -30,13 +30,19 @@ project's agent-facing source of truth.
    the planning phase explicitly otherwise.
 3. **Ask** — collect required facts that code/docs cannot answer.
 4. **Confirm** — present the plan, wait for an unambiguous *yes*.
-5. **Write + verify** — produce the files, then run a grep-based check
-   that every module file has all seven required sections.
+5. **Write** — produce the files.
+6. **Verify + review** — run the grep-based check that every module file
+   has all seven required sections, run each module's **How to Test**,
+   then walk the seven Review Checks over the diff.
+7. **Gate** — apply the Definition of Done. Unticked box or surviving
+   `major`: name the findings, go back to step 5, repeat. All ticked:
+   sign off and report the checklist.
 
 Throughout, the skill works as a **team, not a solo runner** — a Planner,
 Coder, Tester, and Verifier each own a phase (plan → code → test →
 verify), via subagents when the harness has them and otherwise as
-distinct labeled passes.
+distinct labeled passes. Those four roles are one turn of the Development
+Loop the skill emits: the skill obeys the same discipline it writes down.
 
 The full workflow lives in [`SKILL.md`](SKILL.md). Read it once.
 
@@ -145,17 +151,65 @@ If `AGENT.md`, `AGENTS.md`, or `CLAUDE.md` already exist, the skill
 uses their durable project guidance to seed `ARCHITECTURE.md` before
 replacing them with symlinks.
 
-The generated `ARCHITECTURE.md` also carries a **Coding Discipline**
-section reproduced verbatim from the Karpathy `CLAUDE.md` — four
-principles: think before coding, simplicity first, surgical changes, and
-goal-driven execution. Future agents read this block before writing or
-reviewing code, so work stays consistent across sessions and harnesses.
+The generated `ARCHITECTURE.md` also carries three discipline blocks that
+future agents read before touching code, so work stays consistent across
+sessions and harnesses:
+
+- **Development Loop** — the spine. Five stages that repeat: **Frame**
+  (think, state assumptions, attach a check to the goal) → **Write**
+  (smallest change that reaches it) → **Prove** (run the tests, keep the
+  output) → **Review** (all seven checks against your own diff) →
+  **Gate** (Definition of Done: ship, or name the finding and go round
+  again).
+- **Coding Discipline** — the *Write* stage in detail. Reproduced
+  verbatim from the Karpathy `CLAUDE.md`: think before coding, simplicity
+  first, surgical changes, goal-driven execution.
+- **Review Checks** — the *Review* stage in detail. Seven separate
+  passes — style, naming, duplication, quality, fit, dependencies,
+  security — with a severity rubric (`blocker` / `major` / `nit` /
+  `info`), a merge threshold, and a reporting checklist.
+
+```
+      ┌──────────────────────────────────────────────────────┐
+      │                    findings remain                   │
+      ▼                                                      │
+  1. FRAME  →  2. WRITE  →  3. PROVE  →  4. REVIEW  →  5. GATE
+     think       build        evidence     7 checks     done?
+                                                          │
+                                                          ▼
+                                                        ship
+```
+
+Writing the code is stage 2 of 5. Nothing is done until Review has run
+and Gate has passed.
+
+**"Good" is defined, not felt.** The Definition of Done sets the bar at
+open-source standard: *a maintainer who has never seen this change, and
+cannot ask you anything, could review and merge it from the diff and the
+docs alone*. That expands into checkable boxes across correctness (tests
+exist, they pass, it builds from a fresh clone), review (all seven checks
+walked, no unresolved `major`), legibility (a stranger can run it from
+the README; every changed line traces to the goal; no debug leftovers or
+secrets), and contract (the architecture docs updated in the same change,
+breaking changes called out, licenses respected). "It runs" and "I feel
+good about it" are explicitly not on the list — the block that defines
+the loop is the same one that rejects weak success criteria.
+
+Three rules keep the loop honest and finite: **evidence or no finding**
+(every finding cites `file:line`), **the repository is the authority** (a
+convention nobody can locate in the tree is not a convention), and
+**every pass closes a named finding** — with hard stops at two
+no-change passes and at three passes against the same finding, which
+sends the work back to Frame because the design is wrong, not the code.
 
 ## Sources
 
 The Coding Discipline block is reproduced verbatim from:
 
 - [Karpathy `CLAUDE.md`](https://raw.githubusercontent.com/multica-ai/andrej-karpathy-skills/refs/heads/main/CLAUDE.md)
+
+The Review Checks block is adapted from a seven-specialist review panel
+in which one agent owns each check and a chair writes the single verdict.
 
 Harness docs used to verify the install paths and invocation
 conventions above:
