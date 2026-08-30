@@ -17,40 +17,43 @@ architecture every conversation.
 
 The skill covers bootstrap, add-module, and audit workflows. In each
 case the agent inspects existing code/docs first, including any
-`AGENT.md`, `AGENTS.md`, or `CLAUDE.md`, asks only for missing facts,
-gets explicit approval, writes the doc changes, then verifies the
-result. That approval gate matters because the doc structure becomes the
-project's agent-facing source of truth.
+`AGENT.md`, `AGENTS.md`, or `CLAUDE.md`, plans from the available
+evidence, writes the doc changes, reviews them, and verifies the result.
+It asks only during planning, and only when a required answer cannot be
+discovered or safely inferred. Everything else runs autonomously until
+the goal passes the release gate.
 
 ## How it works
 
 1. **Detect path** — create (no `ARCHITECTURE.md` or `ARCHITECTURE/`
    yet) or update (one exists; add a module or audit).
-2. **Plan** — enter the harness's planning mode if it has one; state
-   the planning phase explicitly otherwise.
-3. **Ask** — collect required facts that code/docs cannot answer.
-4. **Confirm** — present the plan, wait for an unambiguous *yes*.
-5. **Write** — produce the files.
-6. **Verify + review** — run the grep-based check that every module file
+2. **Frame** — understand the request, code, and goal; attach observable
+   checks and produce a focused plan.
+3. **Resolve** — infer unknowns from repository evidence. Ask one focused
+   planning question only when a required decision is genuinely blocked.
+4. **Write** — produce the smallest change that reaches the goal.
+5. **Prove + review** — run the grep-based check that every module file
    has all seven required sections, run each module's **How to Test**,
    then walk the seven Review Checks over the diff.
-7. **Gate** — apply the Definition of Done. Unticked box or surviving
-   `major`: name the findings, go back to step 5, repeat. All ticked:
-   sign off and report the checklist.
+6. **Gate** — apply the Definition of Done. Unticked box or surviving
+   `major`: send the evidence back to Write or Frame, then repeat. All
+   ticked: the result is ready for public or production release.
 
 Throughout, the skill works as a **team, not a solo runner** — a Planner,
 Coder, Tester, and Verifier each own a phase (plan → code → test →
 verify), via subagents when the harness has them and otherwise as
 distinct labeled passes. Those four roles are one turn of the Development
 Loop the skill emits: the skill obeys the same discipline it writes down.
+The roles hand work directly to each other without approval, progress, or
+reporting sessions.
 
-The full workflow lives in [`SKILL.md`](SKILL.md). Read it once.
+The workflow, templates, coding discipline, review method, and
+verification gate all live in [`SKILL.md`](SKILL.md).
 
 ## Installation
 
-Install `SKILL.md` plus the optional `mapping/` directory so the
-harness-specific verb table stays available. The directory name must be
-`eatmycode` (matches the `name:` in the frontmatter).
+Install `SKILL.md`. The directory name must be `eatmycode` (matching the
+frontmatter `name`).
 
 | Harness     | Project-level (committed to repo)       | User-level (machine-wide)                       |
 | ----------- | --------------------------------------- | ----------------------------------------------- |
@@ -60,24 +63,24 @@ harness-specific verb table stays available. The directory name must be
 | OpenClaw    | `.openclaw/skills/eatmycode/SKILL.md`   | `~/.openclaw/skills/eatmycode/SKILL.md`         |
 | Grok Build  | `.grok/skills/eatmycode/SKILL.md`       | `~/.grok/skills/eatmycode/SKILL.md`             |
 
-Pick the row that matches your harness and run the corresponding
-command from the directory containing `SKILL.md` and `mapping/`:
+Pick the row that matches your harness and run the corresponding command
+from this repository root:
 
 ```sh
 # Claude Code (user-level)
-mkdir -p ~/.claude/skills/eatmycode && cp SKILL.md ~/.claude/skills/eatmycode/ && cp -R mapping ~/.claude/skills/eatmycode/
+mkdir -p ~/.claude/skills/eatmycode && cp SKILL.md ~/.claude/skills/eatmycode/
 
 # Codex CLI (project-level)
-mkdir -p .agents/skills/eatmycode && cp SKILL.md .agents/skills/eatmycode/ && cp -R mapping .agents/skills/eatmycode/
+mkdir -p .agents/skills/eatmycode && cp SKILL.md .agents/skills/eatmycode/
 
 # OpenCode (user-level, native path)
-mkdir -p ~/.config/opencode/skills/eatmycode && cp SKILL.md ~/.config/opencode/skills/eatmycode/ && cp -R mapping ~/.config/opencode/skills/eatmycode/
+mkdir -p ~/.config/opencode/skills/eatmycode && cp SKILL.md ~/.config/opencode/skills/eatmycode/
 
 # OpenClaw (user-level, native path)
-mkdir -p ~/.openclaw/skills/eatmycode && cp SKILL.md ~/.openclaw/skills/eatmycode/ && cp -R mapping ~/.openclaw/skills/eatmycode/
+mkdir -p ~/.openclaw/skills/eatmycode && cp SKILL.md ~/.openclaw/skills/eatmycode/
 
 # Grok Build (user-level, native path)
-mkdir -p ~/.grok/skills/eatmycode && cp SKILL.md ~/.grok/skills/eatmycode/ && cp -R mapping ~/.grok/skills/eatmycode/
+mkdir -p ~/.grok/skills/eatmycode && cp SKILL.md ~/.grok/skills/eatmycode/
 ```
 
 ### Cross-harness shortcut
@@ -112,22 +115,6 @@ If implicit invocation is disabled or you want a guaranteed entry, just
 ask the agent: *"use the eatmycode skill to design the architecture
 for this project"*.
 
-## Harness mappings
-
-`SKILL.md` is written in generic verbs — *enter-plan-mode*, *ask-user*,
-*run-subagent*, *exit-plan-mode*. The concrete primitive each harness
-uses for each verb lives in [`mapping/`](mapping/):
-
-- [`mapping/claude-code.md`](mapping/claude-code.md)
-- [`mapping/codex.md`](mapping/codex.md)
-- [`mapping/opencode.md`](mapping/opencode.md)
-- [`mapping/openclaw.md`](mapping/openclaw.md)
-- [`mapping/grok.md`](mapping/grok.md)
-
-Every mapping file follows the same standard format: install paths,
-invocation syntax, and a `verb → primitive` table. To add support for a
-new harness, copy any existing file and fill in the same sections.
-
 ## What it produces
 
 ```
@@ -136,7 +123,7 @@ your-project/
 ├── ARCHITECTURE/
 │   ├── module-a.md           # one file per subsystem,
 │   ├── module-b.md           # each following the seven-section template
-│   └── module-c.md           # defined in SKILL.md
+│   └── module-c.md           # defined by the SKILL.md Module Template
 ├── AGENT.md   -> ARCHITECTURE.md   # optional symlinks, kept in sync
 ├── AGENTS.md  -> ARCHITECTURE.md
 └── CLAUDE.md  -> ARCHITECTURE.md
@@ -145,7 +132,7 @@ your-project/
 Each module file has exactly these sections, in order: **Goal**,
 **Status**, **Code Structure**, **Key Types and Entry Points**,
 **Interactions**, **How to Test**, **Open Gaps / Roadmap**. The
-verification block in `SKILL.md` greps for these headers.
+Verification section in `SKILL.md` checks their presence and order.
 
 If `AGENT.md`, `AGENTS.md`, or `CLAUDE.md` already exist, the skill
 uses their durable project guidance to seed `ARCHITECTURE.md` before
@@ -159,15 +146,15 @@ sessions and harnesses:
   (think, state assumptions, attach a check to the goal) → **Write**
   (smallest change that reaches it) → **Prove** (run the tests, keep the
   output) → **Review** (all seven checks against your own diff) →
-  **Gate** (Definition of Done: ship, or name the finding and go round
-  again).
-- **Coding Discipline** — the *Write* stage in detail. Reproduced
-  verbatim from the Karpathy `CLAUDE.md`: think before coding, simplicity
-  first, surgical changes, goal-driven execution.
+  **Gate** (Definition of Done: release, or feed the findings directly
+  back into the loop).
+- **Coding Discipline** — the *Write* stage in detail. Adapted from the
+  Karpathy `CLAUDE.md`: think before coding, simplicity first, surgical
+  changes, goal-driven execution, and autonomous completion.
 - **Review Checks** — the *Review* stage in detail. Seven separate
   passes — style, naming, duplication, quality, fit, dependencies,
   security — with a severity rubric (`blocker` / `major` / `nit` /
-  `info`), a merge threshold, and a reporting checklist.
+  `info`) and a merge threshold.
 
 ```
       ┌──────────────────────────────────────────────────────┐
@@ -198,18 +185,19 @@ the loop is the same one that rejects weak success criteria.
 Three rules keep the loop honest and finite: **evidence or no finding**
 (every finding cites `file:line`), **the repository is the authority** (a
 convention nobody can locate in the tree is not a convention), and
-**every pass closes a named finding** — with hard stops at two
-no-change passes and at three passes against the same finding, which
-sends the work back to Frame because the design is wrong, not the code.
+**every pass closes a named finding**. Two no-change passes force a Gate
+re-evaluation; if Done still fails, the work returns to Frame. Three
+passes against the same finding also return to Frame automatically,
+because the design is wrong, not the code.
 
 ## Sources
 
-The Coding Discipline block is reproduced verbatim from:
+The Coding Discipline block is adapted from:
 
 - [Karpathy `CLAUDE.md`](https://raw.githubusercontent.com/multica-ai/andrej-karpathy-skills/refs/heads/main/CLAUDE.md)
 
 The Review Checks block is adapted from a seven-specialist review panel
-in which one agent owns each check and a chair writes the single verdict.
+in which one agent owns each check.
 
 Harness docs used to verify the install paths and invocation
 conventions above:
