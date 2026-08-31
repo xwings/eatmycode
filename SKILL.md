@@ -115,7 +115,8 @@ owning module doc in the same change.
 The Tester runs every affected module's **How to Test** commands and the
 Verification section below. Each test must prove the module's stated
 Status; merely running is insufficient. Every failure becomes an
-evidence-backed finding for Coder. After every fix, rerun affected tests
+evidence-backed finding for Coder, as does coverage that Prove finds
+missing, duplicated, or obsolete. After every fix, rerun affected tests
 and structural checks. Never send a red result to Review.
 
 The Verifier reads full affected files and applies all seven Review
@@ -201,10 +202,37 @@ approval pause.
 unrequested features or abstractions, match local style, touch only
 in-scope code, and remove only orphans created by the change.
 
-**3. Prove.** Run relevant tests and retain observable evidence. A bug
-fix needs a reproducing test; a new capability needs a test of its
-claimed behavior. A failure returns directly to Write, never forward to
-Review.
+**3. Prove.** Run relevant tests and retain observable evidence.
+
+*Survey the suite before touching it.* Before adding, changing, merging,
+or deleting any test, inventory the whole suite: enumerate every test
+file and case name, then read in full each test whose subject, fixtures,
+or assertions touch this change. Use a subagent for broad inventory when
+supported. From that inventory decide the complete set of test edits at
+once — what to change, what to add, what to merge, what to remove — each
+backed by `file:line`, then execute only that plan. Never write a test
+before the survey, and never discover existing coverage afterward.
+
+The plan obeys four rules:
+
+- **Reuse or extend first.** Add a case to the test that already owns
+  the behavior or shares its setup, fixtures, and subject. A new test
+  function or file is justified only when the survey found no existing
+  test owning the behavior, or when merging would hide which case
+  failed.
+- **Add only what the goal needs.** A bug fix needs a reproducing
+  regression test; a new capability needs a test of its claimed
+  behavior. Nothing further.
+- **Retire what this change made obsolete.** Delete tests whose behavior
+  no longer exists, and merge tests this change turned into duplicates,
+  citing the surviving test. Leave unrelated pre-existing tests alone;
+  record suspected redundancy under **Open Gaps / Roadmap**.
+- **Never delete to reach green.** A failing test is a finding for
+  Write. Removal requires evidence that its behavior is gone or is still
+  covered elsewhere, cited by `file:line`.
+
+Coverage of claimed behavior must not decrease. A failure returns
+directly to Write, never forward to Review.
 
 **4. Review.** Walk all seven Review Checks as separate passes. Read
 whole affected files, not only the diff. Every finding needs `file:line`
@@ -222,6 +250,9 @@ release. There is no separate approval or reporting phase.
 
 - The framed goal and its named check pass.
 - Tests cover claimed behavior and pass; a bug fix has a regression test.
+- The suite was surveyed before any test was written, changed, or
+  deleted; no added test duplicates coverage another test owns, and no
+  removal left claimed behavior uncovered.
 - The owning module's **How to Test** command passes with evidence.
 - The project builds and tests from a fresh clone without local-only
   dependencies.
@@ -402,6 +433,7 @@ Provide only the harness's normal concise completion handoff.
 - Keep module prose in one owning module file and links and line
   references current.
 - Never mark `done` without a passing **How to Test** command.
+- Never delete or weaken a test to turn a red run green.
 - Tester and Verifier never repair their own findings.
 - Unknown facts come from evidence, the single planning-question
   exception, or an explicit external blocker—never a placeholder.
